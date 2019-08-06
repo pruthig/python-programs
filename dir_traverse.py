@@ -1,5 +1,7 @@
 import os
 import sys
+import xlsxwriter
+
 
 def is_macro_present(macro_to_search, macro_list):
 	if len(macro_list)  == 0:
@@ -10,13 +12,43 @@ def is_macro_present(macro_to_search, macro_list):
 				return True
 	return False
 
+def create_xls_file(dict_macros):
+    workbook = xlsxwriter.Workbook("Results.xlsx") 
+    # add_sheet to workbook
+    worksheet = workbook.add_worksheet() 
+
+    cell_format_left = workbook.add_format({ 'align' : 'left'})
+    cell_format_right = workbook.add_format({ 'align' : 'right'})
+
+    # set header to bold
+    cell_format_left.set_bold(True)
+    # Expand columns
+    worksheet.set_column('A:A', 25)
+    worksheet.set_column('A:B', 15)
+    total_count = 0
+    i = 0
+    worksheet.write(i, 0, "MACRO Name", cell_format_left) 
+    worksheet.write(i, 1, "Lines Count", cell_format_left) 
+    i += 2
+
+    for key, value in dict_macros.items():
+        worksheet.write(i, 0, key, cell_format_left) 
+        worksheet.write(i, 1, value, cell_format_right)
+        total_count += value
+        i += 1
+
+    worksheet.write(i+1, 0, "Total count", cell_format_left)
+    worksheet.write(i+1, 1, str(total_count), cell_format_right)
+      
+    workbook.close()
+
 if __name__== "__main__":
 	count = 0
 	# read in all macros
 	try:
 		file_handle = open("macros.txt", "r")
 	except IOError:
-		print 'opening failed'
+		print 'Failed to open macros.txt'
 		exit
 
 	file_writer = open("results.txt", "w")
@@ -110,5 +142,6 @@ if __name__== "__main__":
         file_writer.write('\n\n')
 	for key in macro_count_dict:
 		file_writer.write("{} = {}".format(key, macro_count_dict[key]) + '\n')
-        file_writer.write('\nTotal count is : ', count)
+        file_writer.write('\nTotal count is : ' + str(count))
+        create_xls_file(macro_count_dict)
 
