@@ -42,24 +42,34 @@ def create_xls_file(dict_macros):
       
     workbook.close()
 
+    
 if __name__== "__main__":
-	count = 0
-	# read in all macros
-	try:
-		file_handle = open("macros.txt", "r")
-	except IOError:
-		print 'Failed to open macros.txt'
-		exit
 
+	count = 0
+        macros_handle = None
+        find_all_macros = False
+	macro_list = []
+        macros_all_set =  set()
 	file_writer = open("results.txt", "w")
 
-	macro_list = []
+	try:
+		macros_handle = open("macros.txt", "r")
+	except:
+                macros_handle = open("macros.txt", "w+")
+                find_all_macros = True
+
 	macro_count_dict = {}
-	for macro in file_handle:
-		macro = macro.strip()
+
+        if find_all_macros == False:
+    	    for macro in macros_handle:
+	    	macro = macro.strip()
 		if not macro:
 			continue
 		macro_list.append(macro)
+
+        if find_all_macros == False and  len(macro_list) == 0:
+            find_all_macros= True
+            macros_handle = open("macros.txt", "w+")
 
 	for (dirpath, dirs, files) in os.walk("."):
 		if not files:
@@ -84,6 +94,11 @@ if __name__== "__main__":
 			    if not trimmed_line:
 				continue
 			    line_strs = trimmed_line.split()
+
+                            if line_strs[0] == '#ifdef' and len(line_strs) == 2 and find_all_macros == True:
+                                if line_strs[1] not in macros_all_set:
+                                    macros_all_set.add(line_strs[1])
+                                    continue
 		
 			    if line_strs[0] == '#ifndef':
 				if found == True:
@@ -139,9 +154,13 @@ if __name__== "__main__":
 			    else:
 				None
 
-        file_writer.write('\n\n')
-	for key in macro_count_dict:
-		file_writer.write("{} = {}".format(key, macro_count_dict[key]) + '\n')
-        file_writer.write('\nTotal count is : ' + str(count))
-        create_xls_file(macro_count_dict)
+        if find_all_macros == False:
+            file_writer.write('\n\n')
+            for key in macro_count_dict:
+    	       	file_writer.write("{} = {}".format(key, macro_count_dict[key]) + '\n')
+            file_writer.write('\nTotal count is : ' + str(count))
+            create_xls_file(macro_count_dict)
+        else:
+            for element in macros_all_set:
+                macros_handle.write(element + '\n')    
 
